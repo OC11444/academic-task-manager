@@ -2,95 +2,96 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Plus Jakarta Sans for UI, Source Serif 4 for scholarly content */
+    --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+    --font-serif: 'Source Serif 4', Georgia, serif;
+
+    /* Warm Minimalism palette — HSL approximations of OKLCH spec */
+    /* Primary: Deep Indigo oklch(0.35 0.12 265) */
+    --primary: 245 45% 28%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Backgrounds */
+    --background: 165 12% 95%;          /* Quietude — main content bg */
+    --foreground: 240 20% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 240 20% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 240 20% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Mocha Mousse — sidebar, secondary surfaces */
+    --secondary: 30 22% 48%;
+    --secondary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 165 8% 88%;
+    --muted-foreground: 240 10% 42%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 85 50% 82%;               /* Butter Yellow — soft alerts */
+    --accent-foreground: 85 40% 20%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 72% 50%;           /* Ruby Red — late / error */
+    --destructive-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --border: 165 8% 85%;
+    --input: 165 8% 85%;
+    --ring: 245 45% 28%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --radius: 1rem;                     /* Maia style soft radius */
 
-    --radius: 0.5rem;
+    /* Sidebar — Mocha Mousse tones */
+    --sidebar-background: 30 18% 22%;
+    --sidebar-foreground: 30 10% 85%;
+    --sidebar-primary: 245 45% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 30 15% 30%;
+    --sidebar-accent-foreground: 30 10% 90%;
+    --sidebar-border: 30 12% 28%;
+    --sidebar-ring: 245 45% 55%;
 
-    --sidebar-background: 0 0% 98%;
+    /* Glass effect tokens */
+    --glass-bg: 0 0% 100% / 0.6;
+    --glass-blur: 12px;
+    --glass-border: 0 0% 100% / 0.25;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Status colors */
+    --status-ontime: 245 45% 28%;
+    --status-late: 0 72% 50%;
+    --status-pending: 35 80% 55%;
+    --status-graded: 160 50% 40%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --background: 240 15% 8%;
+    --foreground: 210 20% 92%;
+    --card: 240 12% 12%;
+    --card-foreground: 210 20% 92%;
+    --popover: 240 12% 12%;
+    --popover-foreground: 210 20% 92%;
+    --primary: 245 55% 65%;
+    --primary-foreground: 240 15% 8%;
+    --secondary: 30 18% 28%;
+    --secondary-foreground: 30 10% 90%;
+    --muted: 240 10% 18%;
+    --muted-foreground: 210 12% 60%;
+    --accent: 85 40% 35%;
+    --accent-foreground: 85 30% 90%;
+    --destructive: 0 62% 40%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 10% 18%;
+    --input: 240 10% 18%;
+    --ring: 245 55% 65%;
+    --sidebar-background: 30 12% 12%;
+    --sidebar-foreground: 30 8% 80%;
+    --sidebar-primary: 245 55% 65%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 30 10% 18%;
+    --sidebar-accent-foreground: 30 8% 85%;
+    --sidebar-border: 30 8% 18%;
+    --sidebar-ring: 245 55% 65%;
   }
 }
 
@@ -98,8 +99,28 @@ All colors MUST be HSL.
   * {
     @apply border-border;
   }
-
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-sans);
+  }
+  .prose, .scholarly {
+    font-family: var(--font-serif);
+  }
+}
+
+@layer utilities {
+  .glass {
+    background: hsl(var(--glass-bg));
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid hsl(var(--glass-border));
+  }
+  .glass-strong {
+    background: hsl(0 0% 100% / 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid hsl(var(--glass-border));
   }
 }
