@@ -28,16 +28,10 @@ interface AppSidebarProps {
 
 const staffItems = [
   { title: "Dashboard", url: "/staff", icon: LayoutDashboard },
-  { title: "Assignments", url: "/staff/assignments", icon: FileText },
-  { title: "Students", url: "/staff/students", icon: Users },
-  { title: "Settings", url: "/staff/settings", icon: Settings },
 ];
 
 const studentItems = [
   { title: "Dashboard", url: "/student", icon: LayoutDashboard },
-  { title: "Assignments", url: "/student/assignments", icon: BookOpen },
-  { title: "Submissions", url: "/student/submissions", icon: Upload },
-  { title: "Settings", url: "/student/settings", icon: Settings },
 ];
 
 export function AppSidebar({ role }: AppSidebarProps) {
