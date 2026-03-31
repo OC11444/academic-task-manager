@@ -4,10 +4,17 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { DueSoonFeed } from "@/components/DueSoonFeed";
 import { ActivityFeed } from "@/components/ActivityFeed";
 import { SubmissionModal } from "@/components/SubmissionModal";
+import { KanbanBoard } from "@/components/KanbanBoard";
+import { TaskCommentPanel } from "@/components/TaskCommentPanel";
+import { TeamPresence } from "@/components/TeamPresence";
+import { NotificationDropdown } from "@/components/NotificationDropdown";
+import { MultiplayerCursors } from "@/components/MultiplayerCursors";
 import { SpringButton } from "@/components/SpringButton";
 import { GlassCard } from "@/components/GlassCard";
+import { useTasks, useNotifications, useTeamPresence } from "@/stores/useAppStore";
 import { Upload, CheckCircle, Clock } from "lucide-react";
 import { motion } from "framer-motion";
+import type { Task } from "@/stores/mockData";
 
 const studentStats = [
   { label: "Submitted", value: "12", icon: CheckCircle },
@@ -17,6 +24,16 @@ const studentStats = [
 
 export default function StudentDashboard() {
   const [modalOpen, setModalOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [commentOpen, setCommentOpen] = useState(false);
+  const { tasks, moveTask, addComment } = useTasks();
+  const { notifications, unreadCount, markAsRead, markAllRead } = useNotifications();
+  const { members, onlineMembers } = useTeamPresence();
+
+  const handleSelectTask = (task: Task) => {
+    setSelectedTask(task);
+    setCommentOpen(true);
+  };
 
   return (
     <SidebarProvider>
@@ -29,6 +46,13 @@ export default function StudentDashboard() {
               <h2 className="text-sm font-semibold">Student Dashboard</h2>
               <p className="text-xs text-muted-foreground">Welcome back, Amara</p>
             </div>
+            <TeamPresence members={members} />
+            <NotificationDropdown
+              notifications={notifications}
+              unreadCount={unreadCount}
+              onMarkAsRead={markAsRead}
+              onMarkAllRead={markAllRead}
+            />
             <SpringButton onClick={() => setModalOpen(true)} size="sm">
               <Upload className="mr-2 h-4 w-4" />
               Submit Work
@@ -61,6 +85,12 @@ export default function StudentDashboard() {
               ))}
             </motion.div>
 
+            {/* Kanban */}
+            <div>
+              <h3 className="mb-3 text-lg font-semibold">My Tasks</h3>
+              <KanbanBoard tasks={tasks} onMoveTask={moveTask} onSelectTask={handleSelectTask} />
+            </div>
+
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
               <div className="lg:col-span-2">
                 <DueSoonFeed />
@@ -73,7 +103,9 @@ export default function StudentDashboard() {
         </div>
       </div>
 
+      <MultiplayerCursors members={onlineMembers} />
       <SubmissionModal open={modalOpen} onOpenChange={setModalOpen} isLate={false} />
+      <TaskCommentPanel task={selectedTask} open={commentOpen} onOpenChange={setCommentOpen} onAddComment={addComment} />
     </SidebarProvider>
   );
 }
