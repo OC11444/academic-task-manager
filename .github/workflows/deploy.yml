@@ -3,7 +3,7 @@ name: Continuous Deployment (GitHub Pages)
 on:
   push:
     branches:
-      - main # Triggered when you merge the PR above!
+      - main
 
 jobs:
   build-and-deploy:
@@ -16,8 +16,17 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Configure Git Identity 👤
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+      - name: Set up authentication
+        run: |
+                git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
       - name: Build and Deploy
         run: |
-          npm install
           npm run build
           npm run deploy

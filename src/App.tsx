@@ -16,8 +16,8 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        {/* This div ensures the toggle stays pinned in the corner on every page */}
+      {/* Added basename below to match your GitHub Pages URL */}
+      <BrowserRouter basename="/academic-task-manager">
         <div className="fixed top-4 right-4 z-50">
           <ThemeToggle />
         </div>
