@@ -3,7 +3,11 @@ name: Continuous Integration (Test & PR)
 on:
   push:
     branches:
-      - cascading-hierarchy-implementation
+    
+      - 'main'
+      - 'dev'
+      - 'feature/*' # all feature branches
+      - 'fix/*'
 
 jobs:
   validate-and-request:
