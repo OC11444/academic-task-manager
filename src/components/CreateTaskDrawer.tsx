@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { mockUnits, mockGroups, type Priority, type TaskStatus } from "@/stores/mockData";
+import { mockGroups, type Priority, type TaskStatus } from "@/stores/mockData";
 
 interface CreateTaskDrawerProps {
   open: boolean;
@@ -24,17 +24,49 @@ interface CreateTaskDrawerProps {
     priority: Priority;
     status: TaskStatus;
     deadline: Date;
+    allowLateSubmission: boolean; // <-- Our new rule!
   }) => Promise<unknown>;
   isCreating: boolean;
 }
 
 export function CreateTaskDrawer({ open, onOpenChange, onCreate, isCreating }: CreateTaskDrawerProps) {
+  // 1. Our Restored & Upgraded Memory (State)
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [unit, setUnit] = useState("");
+  
+  
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
   const [priority, setPriority] = useState<Priority>("medium");
-  const [deadline, setDeadline] = useState<Date>();
+  const [deadline, setDeadline] = useState<Date | undefined>();
+
+  // Our new Database Guard (Starts as false/unchecked)
+  const [allowLateSubmission, setAllowLateSubmission] = useState(false);
+
+  // Our 4-Level Cascade Memory
+  const [selectedSchool, setSelectedSchool] = useState("");
+  const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [selectedCourse, setSelectedCourse] = useState("");
+  const [selectedUnit, setSelectedUnit] = useState("");
+
+  // 2. Our Upgraded Academic Map
+  const academicStructure: Record<string, any> = {
+    "School of Engineering": {
+      "Computer Science": {
+        "Frontend Architecture": ["Unit 1: React Basics", "Unit 2: Tailwind Styling"],
+        "Backend Systems": ["Unit 1: Node.js", "Unit 2: Databases"]
+      }
+    },
+    "School of Business": {
+      "Management": {
+        "Leadership 101": ["Unit 1: Team Dynamics", "Unit 2: Conflict Resolution"]
+      }
+    },
+    "School of Design": {
+      "Interactive Media": {
+        "Product Design 101": ["Unit 1: Wireframing", "Unit 2: User Testing"]
+      }
+    }
+  };
 
   const toggleGroup = (gId: string) => {
     setSelectedGroups((prev) =>
@@ -46,23 +78,31 @@ export function CreateTaskDrawer({ open, onOpenChange, onCreate, isCreating }: C
     .filter((g) => selectedGroups.includes(g.id))
     .flatMap((g) => g.members);
 
+  // 3. Fully Wired Submit Function
   const handleSubmit = async () => {
-    if (!title || !unit || !deadline) return;
+    if (!title || !selectedUnit || !deadline) return;
+    
     await onCreate({
       title,
       description,
-      unit,
+      unit: selectedUnit,
       assignedTo: [...new Set(assignedMembers)],
       priority,
       status: "todo",
       deadline,
+      allowLateSubmission, // <-- We add it to the package here!
     });
+    
     setTitle("");
     setDescription("");
-    setUnit("");
+    setSelectedSchool("");
+    setSelectedDepartment("");
+    setSelectedCourse("");
+    setSelectedUnit("");
     setSelectedGroups([]);
     setPriority("medium");
     setDeadline(undefined);
+    setAllowLateSubmission(false); // <-- We clear the memory here!
     onOpenChange(false);
   };
 
@@ -81,19 +121,79 @@ export function CreateTaskDrawer({ open, onOpenChange, onCreate, isCreating }: C
         </SheetHeader>
 
         <div className="mt-6 space-y-5">
-          {/* Unit */}
-          <div className="space-y-2">
-            <Label>Unit / Course</Label>
-            <Select value={unit} onValueChange={setUnit}>
-              <SelectTrigger aria-label="Select unit">
-                <SelectValue placeholder="Select a unit..." />
-              </SelectTrigger>
-              <SelectContent>
-                {mockUnits.map((u) => (
-                  <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* 4. The 4-Level Academic Hierarchy UI */}
+          <div className="space-y-4 border border-border/50 p-4 rounded-2xl bg-muted/20">
+            {/* School */}
+            <div className="space-y-2">
+              <Label>School</Label>
+              <Select value={selectedSchool} onValueChange={(val) => {
+                setSelectedSchool(val);
+                setSelectedDepartment("");
+                setSelectedCourse(""); 
+                setSelectedUnit("");   
+              }}>
+                <SelectTrigger aria-label="Select school" className="rounded-2xl">
+                  <SelectValue placeholder="Select a school..." />
+                </SelectTrigger>
+                <SelectContent className="rounded-2xl">
+                  {Object.keys(academicStructure).map((school) => (
+                    <SelectItem key={school} value={school}>{school}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Department */}
+            <div className="space-y-2">
+              <Label>Department</Label>
+              <Select disabled={!selectedSchool} value={selectedDepartment} onValueChange={(val) => {
+                setSelectedDepartment(val);
+                setSelectedCourse(""); 
+                setSelectedUnit("");   
+              }}>
+                <SelectTrigger aria-label="Select department" className="rounded-2xl">
+                  <SelectValue placeholder="Select a department..." />
+                </SelectTrigger>
+                <SelectContent className="rounded-2xl">
+                  {selectedSchool && Object.keys(academicStructure[selectedSchool]).map((dept) => (
+                    <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Course */}
+            <div className="space-y-2">
+              <Label>Course</Label>
+              <Select disabled={!selectedDepartment} value={selectedCourse} onValueChange={(val) => {
+                setSelectedCourse(val);
+                setSelectedUnit(""); 
+              }}>
+                <SelectTrigger aria-label="Select course" className="rounded-2xl">
+                  <SelectValue placeholder="Select a course..." />
+                </SelectTrigger>
+                <SelectContent className="rounded-2xl">
+                  {selectedSchool && selectedDepartment && Object.keys(academicStructure[selectedSchool][selectedDepartment]).map((course) => (
+                    <SelectItem key={course} value={course}>{course}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Unit */}
+            <div className="space-y-2">
+              <Label>Unit</Label>
+              <Select disabled={!selectedCourse} value={selectedUnit} onValueChange={setSelectedUnit}>
+                <SelectTrigger aria-label="Select unit" className="rounded-2xl">
+                  <SelectValue placeholder="Select a unit..." />
+                </SelectTrigger>
+                <SelectContent className="rounded-2xl">
+                  {selectedSchool && selectedDepartment && selectedCourse && academicStructure[selectedSchool][selectedDepartment][selectedCourse].map((u) => (
+                    <SelectItem key={u} value={u}>{u}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Title */}
@@ -192,6 +292,33 @@ export function CreateTaskDrawer({ open, onOpenChange, onCreate, isCreating }: C
               </PopoverContent>
             </Popover>
           </div>
+          {/* Database Guard: Late Submission */}
+          <div className="space-y-2">
+            <Label>Submission Rules</Label>
+            <button
+              type="button"
+              onClick={() => setAllowLateSubmission(!allowLateSubmission)}
+              className={cn(
+                "w-full flex items-center justify-between rounded-2xl border px-4 py-3 text-sm font-medium transition-all",
+                allowLateSubmission
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border text-muted-foreground hover:border-primary/40"
+              )}
+            >
+              <span>Allow Late Submissions</span>
+              <div className={cn(
+                "h-5 w-5 rounded-lg border flex items-center justify-center transition-colors",
+                allowLateSubmission ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/40 text-transparent"
+              )}>
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            </button>
+            <p className="text-xs text-muted-foreground pl-1">
+              If enabled, students can submit after the deadline but will be flagged in the database as "Late".
+            </p>
+          </div>
 
           {/* Actions */}
           <div className="flex justify-end gap-3 pt-4">
@@ -200,7 +327,7 @@ export function CreateTaskDrawer({ open, onOpenChange, onCreate, isCreating }: C
             </SpringButton>
             <SpringButton
               onClick={handleSubmit}
-              disabled={!title || !unit || !deadline || isCreating}
+              disabled={!title || !selectedUnit || !deadline || isCreating}
             >
               {isCreating ? (
                 <>

@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import Index from "./pages/Index";
 import StaffDashboard from "./pages/StaffDashboard";
 import StudentDashboard from "./pages/StudentDashboard";
@@ -16,6 +17,10 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        {/* This div ensures the toggle stays pinned in the corner on every page */}
+        <div className="fixed top-4 right-4 z-50">
+          <ThemeToggle />
+        </div>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/staff" element={<StaffDashboard />} />

@@ -8,7 +8,7 @@ import { KanbanBoard } from "@/components/KanbanBoard";
 import { TaskCommentPanel } from "@/components/TaskCommentPanel";
 import { TeamPresence } from "@/components/TeamPresence";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
-import { MultiplayerCursors } from "@/components/MultiplayerCursors";
+//import { MultiplayerCursors } from "@/components/MultiplayerCursors";
 import { SpringButton } from "@/components/SpringButton";
 import { GlassCard } from "@/components/GlassCard";
 import { useTasks, useNotifications, useTeamPresence } from "@/stores/useAppStore";
@@ -103,7 +103,7 @@ export default function StudentDashboard() {
         </div>
       </div>
 
-      <MultiplayerCursors members={onlineMembers} />
+      
       <SubmissionModal open={modalOpen} onOpenChange={setModalOpen} isLate={false} />
       <TaskCommentPanel task={selectedTask} open={commentOpen} onOpenChange={setCommentOpen} onAddComment={addComment} />
     </SidebarProvider>

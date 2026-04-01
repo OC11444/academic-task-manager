@@ -1,0 +1,23 @@
+name: Continuous Deployment (GitHub Pages)
+
+on:
+  push:
+    branches:
+      - main # Triggered when you merge the PR above!
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build and Deploy
+        run: |
+          npm install
+          npm run build
+          npm run deploy

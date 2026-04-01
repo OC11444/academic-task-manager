@@ -1,0 +1,33 @@
+name: Continuous Integration (Test & PR)
+
+on:
+  push:
+    branches:
+      - cascading-hierarchy-implementation
+
+jobs:
+  validate-and-request:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install & Test
+        run: |
+          npm install
+          npm test
+
+      - name: Create Pull Request to Main
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: sync-feature-to-main
+          base: main
+          title: "🚀 Review Required: ${{ github.ref_name }}"
+          body: "Tests passed! Review these changes before they go to production."

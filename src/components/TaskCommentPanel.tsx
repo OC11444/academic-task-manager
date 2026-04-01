@@ -77,7 +77,7 @@ export function TaskCommentPanel({ task, open, onOpenChange, onAddComment }: Tas
         </div>
 
         {/* Description */}
-        <p className="mt-3 text-sm text-muted-foreground scholarly">{task.description}</p>
+        <p className="mt-3 text-sm font-medium text-muted-foreground scholarly">{task.description}</p>
 
         {/* Thread */}
         <div ref={scrollRef} className="mt-4 flex-1 space-y-3 overflow-y-auto rounded-lg bg-muted/30 p-3">
@@ -104,7 +104,7 @@ export function TaskCommentPanel({ task, open, onOpenChange, onAddComment }: Tas
                     {formatDistanceToNow(comment.createdAt, { addSuffix: true })}
                   </span>
                 </div>
-                <p className="mt-0.5 text-sm text-foreground">{comment.content}</p>
+                <p className="mt-0.5 text-sm font-medium text-foreground">{comment.content}</p>
               </div>
             </div>
           ))}
