@@ -17,7 +17,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       {/* Added basename below to match your GitHub Pages URL */}
-      <BrowserRouter basename="/academic-task-manager">
+      <BrowserRouter basename="/academic-task-manager/">
         <div className="fixed top-4 right-4 z-50">
           <ThemeToggle />
         </div>
