@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+// 1. Changed BrowserRouter to HashRouter
+import { HashRouter, Route, Routes } from "react-router-dom"; 
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,8 +17,8 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      {/* Added basename below to match your GitHub Pages URL */}
-      <BrowserRouter basename="/academic-task-manager/">
+      {/* 2. Swapped BrowserRouter for HashRouter. Basename is usually not needed here! */}
+      <HashRouter>
         <div className="fixed top-4 right-4 z-50">
           <ThemeToggle />
         </div>
@@ -27,7 +28,7 @@ const App = () => (
           <Route path="/student" element={<StudentDashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </BrowserRouter>
+      </HashRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );
