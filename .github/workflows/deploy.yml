@@ -3,34 +3,42 @@ name: Continuous Deployment (GitHub Pages)
 on:
   push:
     branches:
-      - main
+      - main  # Triggered when code hits main
+  workflow_dispatch:
+
+# Sets permissions to allow the bot to deploy to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout 
+        uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node 
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '20'  # Matches your environment
+          cache: 'npm'
 
-      - name: Install Dependencies
-        run: npm install
+      - name: Install Dependencies 
+        run: npm install  #
 
-      - name: Configure Git Identity 👤
-        run: |
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git config --global user.name "github-actions[bot]"
-
-      - name: Set up authentication
-        run: |
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-
-      - name: Build and Deploy
+      - name: Build 
         env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
-        run: |
-          npm run build
-          npm run deploy
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}  # Pulls from your Secrets
+        run: npm run build  # Creates the 'dist' folder
+
+      - name: Upload artifact 📤
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Vite builds to 'dist' by default
+          path: './dist'
+
+      - name: Deploy to GitHub Pages 
+        id: deployment
+        uses: actions/deploy-pages@v4
