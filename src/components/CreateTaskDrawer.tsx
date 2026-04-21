@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -12,61 +12,58 @@ import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { mockGroups, type Priority, type TaskStatus } from "@/stores/mockData";
+import { useAcademic } from "@/stores/useAppStore";
+
+// 1. FIXED: Updated payload keys to match Django's snake_case expectations
+export type CreateTaskPayload = {
+  title: string;
+  description: string;
+  unit: string;
+  assignedTo: string[];
+  priority: Priority;
+  status: TaskStatus;
+  due_date: string;
+  allow_late_submissions: boolean;
+};
 
 interface CreateTaskDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreate: (task: {
-    title: string;
-    description: string;
-    unit: string;
-    assignedTo: string[];
-    priority: Priority;
-    status: TaskStatus;
-    deadline: Date;
-    allowLateSubmission: boolean; // <-- Our new rule!
-  }) => Promise<unknown>;
+  onCreate: (task: CreateTaskPayload) => Promise<unknown>;
   isCreating: boolean;
 }
 
 export function CreateTaskDrawer({ open, onOpenChange, onCreate, isCreating }: CreateTaskDrawerProps) {
-  // 1. Our Restored & Upgraded Memory (State)
+  const {
+    schools,
+    departments,
+    courses,
+    units,
+    fetchSchools,
+    fetchDepartments,
+    fetchCourses,
+    fetchUnits,
+  } = useAcademic();
+
+  const hasFetchedSchoolsRef = useRef(false);
+  useEffect(() => {
+    if (open && !hasFetchedSchoolsRef.current) {
+      hasFetchedSchoolsRef.current = true;
+      fetchSchools();
+    }
+  }, [open, fetchSchools]);
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  
-  
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
   const [priority, setPriority] = useState<Priority>("medium");
   const [deadline, setDeadline] = useState<Date | undefined>();
-
-  // Our new Database Guard (Starts as false/unchecked)
   const [allowLateSubmission, setAllowLateSubmission] = useState(false);
 
-  // Our 4-Level Cascade Memory
   const [selectedSchool, setSelectedSchool] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("");
   const [selectedUnit, setSelectedUnit] = useState("");
-
-  // 2. Our Upgraded Academic Map
-  const academicStructure: Record<string, any> = {
-    "School of Engineering": {
-      "Computer Science": {
-        "Frontend Architecture": ["Unit 1: React Basics", "Unit 2: Tailwind Styling"],
-        "Backend Systems": ["Unit 1: Node.js", "Unit 2: Databases"]
-      }
-    },
-    "School of Business": {
-      "Management": {
-        "Leadership 101": ["Unit 1: Team Dynamics", "Unit 2: Conflict Resolution"]
-      }
-    },
-    "School of Design": {
-      "Interactive Media": {
-        "Product Design 101": ["Unit 1: Wireframing", "Unit 2: User Testing"]
-      }
-    }
-  };
 
   const toggleGroup = (gId: string) => {
     setSelectedGroups((prev) =>
@@ -78,32 +75,36 @@ export function CreateTaskDrawer({ open, onOpenChange, onCreate, isCreating }: C
     .filter((g) => selectedGroups.includes(g.id))
     .flatMap((g) => g.members);
 
-  // 3. Fully Wired Submit Function
   const handleSubmit = async () => {
     if (!title || !selectedUnit || !deadline) return;
     
-    await onCreate({
-      title,
-      description,
-      unit: selectedUnit,
-      assignedTo: [...new Set(assignedMembers)],
-      priority,
-      status: "todo",
-      deadline,
-      allowLateSubmission, // <-- We add it to the package here!
-    });
-    
-    setTitle("");
-    setDescription("");
-    setSelectedSchool("");
-    setSelectedDepartment("");
-    setSelectedCourse("");
-    setSelectedUnit("");
-    setSelectedGroups([]);
-    setPriority("medium");
-    setDeadline(undefined);
-    setAllowLateSubmission(false); // <-- We clear the memory here!
-    onOpenChange(false);
+    try {
+      // 2. FIXED: Payload now sends the correct keys to the backend
+      await onCreate({
+        title,
+        description,
+        unit: selectedUnit,        
+        priority,
+        status: "todo",
+        due_date: deadline.toISOString(), 
+        allow_late_submissions: allowLateSubmission,         
+        assignedTo: [...new Set(assignedMembers)],
+      });
+      
+      setTitle("");
+      setDescription("");
+      setSelectedSchool("");
+      setSelectedDepartment("");
+      setSelectedCourse("");
+      setSelectedUnit("");
+      setSelectedGroups([]);
+      setPriority("medium");
+      setDeadline(undefined);
+      setAllowLateSubmission(false);
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Task creation failed:", error);
+    }
   };
 
   const priorityColors: Record<Priority, string> = {
@@ -121,23 +122,28 @@ export function CreateTaskDrawer({ open, onOpenChange, onCreate, isCreating }: C
         </SheetHeader>
 
         <div className="mt-6 space-y-5">
-          {/* 4. The 4-Level Academic Hierarchy UI */}
           <div className="space-y-4 border border-border/50 p-4 rounded-2xl bg-muted/20">
             {/* School */}
             <div className="space-y-2">
               <Label>School</Label>
-              <Select value={selectedSchool} onValueChange={(val) => {
-                setSelectedSchool(val);
-                setSelectedDepartment("");
-                setSelectedCourse(""); 
-                setSelectedUnit("");   
-              }}>
+              <Select
+                value={selectedSchool}
+                onValueChange={(val) => {
+                  setSelectedSchool(val);
+                  setSelectedDepartment("");
+                  setSelectedCourse("");
+                  setSelectedUnit("");
+                  fetchDepartments(val);
+                }}
+              >
                 <SelectTrigger aria-label="Select school" className="rounded-2xl">
                   <SelectValue placeholder="Select a school..." />
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl">
-                  {Object.keys(academicStructure).map((school) => (
-                    <SelectItem key={school} value={school}>{school}</SelectItem>
+                  {schools.map((school: any) => (
+                    <SelectItem key={school.id} value={String(school.id)}>
+                      {school.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -146,17 +152,24 @@ export function CreateTaskDrawer({ open, onOpenChange, onCreate, isCreating }: C
             {/* Department */}
             <div className="space-y-2">
               <Label>Department</Label>
-              <Select disabled={!selectedSchool} value={selectedDepartment} onValueChange={(val) => {
-                setSelectedDepartment(val);
-                setSelectedCourse(""); 
-                setSelectedUnit("");   
-              }}>
+              <Select
+                disabled={!selectedSchool}
+                value={selectedDepartment}
+                onValueChange={(val) => {
+                  setSelectedDepartment(val);
+                  setSelectedCourse("");
+                  setSelectedUnit("");
+                  fetchCourses(val);
+                }}
+              >
                 <SelectTrigger aria-label="Select department" className="rounded-2xl">
                   <SelectValue placeholder="Select a department..." />
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl">
-                  {selectedSchool && Object.keys(academicStructure[selectedSchool]).map((dept) => (
-                    <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                  {departments.map((dept: any) => (
+                    <SelectItem key={dept.id} value={String(dept.id)}>
+                      {dept.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -165,16 +178,24 @@ export function CreateTaskDrawer({ open, onOpenChange, onCreate, isCreating }: C
             {/* Course */}
             <div className="space-y-2">
               <Label>Course</Label>
-              <Select disabled={!selectedDepartment} value={selectedCourse} onValueChange={(val) => {
-                setSelectedCourse(val);
-                setSelectedUnit(""); 
-              }}>
+              <Select
+                disabled={!selectedDepartment}
+                value={selectedCourse}
+                onValueChange={(val) => {
+                  setSelectedCourse(val);
+                  setSelectedUnit("");
+                  fetchUnits(val);
+                }}
+              >
                 <SelectTrigger aria-label="Select course" className="rounded-2xl">
                   <SelectValue placeholder="Select a course..." />
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl">
-                  {selectedSchool && selectedDepartment && Object.keys(academicStructure[selectedSchool][selectedDepartment]).map((course) => (
-                    <SelectItem key={course} value={course}>{course}</SelectItem>
+                  {courses.map((course: any) => (
+                    // 3. FIXED: Mapped to course_code and name
+                    <SelectItem key={course.id} value={String(course.id)}>
+                      {course.course_code} — {course.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -183,20 +204,26 @@ export function CreateTaskDrawer({ open, onOpenChange, onCreate, isCreating }: C
             {/* Unit */}
             <div className="space-y-2">
               <Label>Unit</Label>
-              <Select disabled={!selectedCourse} value={selectedUnit} onValueChange={setSelectedUnit}>
+              <Select
+                disabled={!selectedCourse}
+                value={selectedUnit}
+                onValueChange={setSelectedUnit}
+              >
                 <SelectTrigger aria-label="Select unit" className="rounded-2xl">
                   <SelectValue placeholder="Select a unit..." />
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl">
-                  {selectedSchool && selectedDepartment && selectedCourse && academicStructure[selectedSchool][selectedDepartment][selectedCourse].map((u) => (
-                    <SelectItem key={u} value={u}>{u}</SelectItem>
+                  {units.map((u: any) => (
+                    // 4. FIXED: Removed sort() and mapped to name
+                    <SelectItem key={u.id} value={String(u.id)}>
+                      {u.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          {/* Title */}
           <div className="space-y-2">
             <Label htmlFor="task-title">Title</Label>
             <Input
@@ -208,7 +235,6 @@ export function CreateTaskDrawer({ open, onOpenChange, onCreate, isCreating }: C
             />
           </div>
 
-          {/* Description */}
           <div className="space-y-2">
             <Label htmlFor="task-desc">Description (Markdown)</Label>
             <Textarea
@@ -221,7 +247,6 @@ export function CreateTaskDrawer({ open, onOpenChange, onCreate, isCreating }: C
             />
           </div>
 
-          {/* Assign to Group */}
           <div className="space-y-2">
             <Label>Assign to Team / Group</Label>
             <div className="flex flex-wrap gap-2">
@@ -235,7 +260,6 @@ export function CreateTaskDrawer({ open, onOpenChange, onCreate, isCreating }: C
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-border text-muted-foreground hover:border-primary/40"
                   )}
-                  aria-label={`Toggle ${g.name}`}
                 >
                   {g.name}
                 </button>
@@ -243,7 +267,6 @@ export function CreateTaskDrawer({ open, onOpenChange, onCreate, isCreating }: C
             </div>
           </div>
 
-          {/* Priority */}
           <div className="space-y-2">
             <Label>Priority</Label>
             <div className="flex gap-2">
@@ -257,7 +280,6 @@ export function CreateTaskDrawer({ open, onOpenChange, onCreate, isCreating }: C
                       ? priorityColors[p]
                       : "border-border text-muted-foreground hover:border-primary/30"
                   )}
-                  aria-label={`Set priority ${p}`}
                 >
                   {p}
                 </button>
@@ -265,7 +287,6 @@ export function CreateTaskDrawer({ open, onOpenChange, onCreate, isCreating }: C
             </div>
           </div>
 
-          {/* Deadline */}
           <div className="space-y-2">
             <Label>Deadline</Label>
             <Popover>
@@ -292,7 +313,7 @@ export function CreateTaskDrawer({ open, onOpenChange, onCreate, isCreating }: C
               </PopoverContent>
             </Popover>
           </div>
-          {/* Database Guard: Late Submission */}
+
           <div className="space-y-2">
             <Label>Submission Rules</Label>
             <button
@@ -315,12 +336,8 @@ export function CreateTaskDrawer({ open, onOpenChange, onCreate, isCreating }: C
                 </svg>
               </div>
             </button>
-            <p className="text-xs text-muted-foreground pl-1">
-              If enabled, students can submit after the deadline but will be flagged in the database as "Late".
-            </p>
           </div>
 
-          {/* Actions */}
           <div className="flex justify-end gap-3 pt-4">
             <SpringButton variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
