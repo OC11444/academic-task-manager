@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { DueSoonFeed } from "@/components/DueSoonFeed";
@@ -8,32 +8,72 @@ import { KanbanBoard } from "@/components/KanbanBoard";
 import { TaskCommentPanel } from "@/components/TaskCommentPanel";
 import { TeamPresence } from "@/components/TeamPresence";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
-//import { MultiplayerCursors } from "@/components/MultiplayerCursors";
 import { SpringButton } from "@/components/SpringButton";
 import { GlassCard } from "@/components/GlassCard";
-import { useTasks, useNotifications, useTeamPresence } from "@/stores/useAppStore";
+import { useTasks, useNotifications, useTeamPresence, useReports } from "@/stores/useAppStore";
 import { Upload, CheckCircle, Clock } from "lucide-react";
 import { motion } from "framer-motion";
-import type { Task } from "@/stores/mockData";
-
-const studentStats = [
-  { label: "Submitted", value: "12", icon: CheckCircle },
-  { label: "Pending", value: "3", icon: Clock },
-  { label: "Late", value: "1", icon: Upload },
-];
+// 🛠️ FIX: Use the real Academic type so we can talk to the backend
+import type { Task } from "@/types/academic"; 
+import { useAuthUser } from "@/hooks/useAuthUser";
 
 export default function StudentDashboard() {
+  const user = useAuthUser();
   const [modalOpen, setModalOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [commentOpen, setCommentOpen] = useState(false);
-  const { tasks, moveTask, addComment } = useTasks();
-  const { notifications, unreadCount, markAsRead, markAllRead } = useNotifications();
-  const { members, onlineMembers } = useTeamPresence();
+
+  // 🛠️ Grab the fetch functions and real data from the store
+  const { tasks, moveTask, addComment, fetchTasks } = useTasks();
+  const selectedTask = tasks.find(t => String(t.id) === String(selectedTaskId)) || null;
+  const { notifications, unreadCount, markAsRead, markAllRead, fetchNotifications } = useNotifications();
+  const { members } = useTeamPresence();
+  const { report, fetchUnitReport } = useReports();
+
+  // 🛠️ Sarah's connection logic: Determine which unit to show
+  const activeUnitId = import.meta.env.VITE_DEFAULT_UNIT_ID || "2";
+
+  useEffect(() => {
+    if (activeUnitId) {
+      // 1. Initial Fetch
+      fetchTasks(activeUnitId);
+      fetchNotifications();
+      fetchUnitReport(activeUnitId);
+
+      // 2. Setup "WhatsApp" Heartbeat: Refresh every 5 seconds
+      const heartbeat = setInterval(() => {
+        fetchTasks(activeUnitId);
+        fetchNotifications();
+      }, 5000); 
+
+      // 3. Clean up when the user leaves the page
+      return () => clearInterval(heartbeat);
+    }
+  }, [activeUnitId, fetchTasks, fetchNotifications, fetchUnitReport]);
 
   const handleSelectTask = (task: Task) => {
-    setSelectedTask(task);
+    setSelectedTaskId(String(task.id));
     setCommentOpen(true);
   };
+
+  // 🛠️ Dynamic Stats: Link the top cards to Sarah's actual report
+  const studentStats = [
+    { 
+      label: "Submitted", 
+      value: report?.pendingReviews?.toString() ?? "0", 
+      icon: CheckCircle 
+    },
+    { 
+      label: "Pending", 
+      value: tasks.filter(t => t.status?.toLowerCase() !== 'done').length.toString(), 
+      icon: Clock 
+    },
+    { 
+      label: "Late", 
+      value: report?.overdueFeedback?.toString() ?? "0", 
+      icon: Upload 
+    },
+  ];
 
   return (
     <SidebarProvider>
@@ -44,7 +84,9 @@ export default function StudentDashboard() {
             <SidebarTrigger className="text-muted-foreground" />
             <div className="flex-1">
               <h2 className="text-sm font-semibold">Student Dashboard</h2>
-              <p className="text-xs text-muted-foreground">Welcome back, Amara</p>
+              <p className="text-xs text-muted-foreground">
+                Welcome back, {user?.username || "Sarah"}
+              </p>
             </div>
             <TeamPresence members={members} />
             <NotificationDropdown
@@ -60,7 +102,6 @@ export default function StudentDashboard() {
           </header>
 
           <main className="flex-1 space-y-6 p-6">
-            {/* Mini stats */}
             <motion.div
               className="grid grid-cols-3 gap-4"
               initial={{ opacity: 0 }}
@@ -85,15 +126,15 @@ export default function StudentDashboard() {
               ))}
             </motion.div>
 
-            {/* Kanban */}
             <div>
               <h3 className="mb-3 text-lg font-semibold">My Tasks</h3>
+              {/* Ensure Kanban Board receives tasks */}
               <KanbanBoard tasks={tasks} onMoveTask={moveTask} onSelectTask={handleSelectTask} />
             </div>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
               <div className="lg:col-span-2">
-                <DueSoonFeed />
+                <DueSoonFeed unitId={activeUnitId} />
               </div>
               <div>
                 <ActivityFeed />
@@ -102,10 +143,16 @@ export default function StudentDashboard() {
           </main>
         </div>
       </div>
-
       
-      <SubmissionModal open={modalOpen} onOpenChange={setModalOpen} isLate={false} />
-      <TaskCommentPanel task={selectedTask} open={commentOpen} onOpenChange={setCommentOpen} onAddComment={addComment} />
+      <SubmissionModal open={modalOpen} onOpenChange={setModalOpen} tasks={tasks} />
+      
+      {/* ⚠️ NOTE: This will show an error until we fix TaskCommentPanel next! */}
+      <TaskCommentPanel 
+        task={selectedTask} 
+        open={commentOpen} 
+        onOpenChange={setCommentOpen} 
+        onAddComment={addComment} 
+      />
     </SidebarProvider>
   );
 }

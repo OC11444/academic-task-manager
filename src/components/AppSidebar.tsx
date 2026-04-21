@@ -1,14 +1,6 @@
-import {
-  LayoutDashboard,
-  FileText,
-  Users,
-  Settings,
-  GraduationCap,
-  Upload,
-  BookOpen,
-} from "lucide-react";
+import { LayoutDashboard, GraduationCap } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
+import { useAuthUser } from "@/hooks/useAuthUser";
 import {
   Sidebar,
   SidebarContent,
@@ -34,11 +26,22 @@ const studentItems = [
   { title: "Dashboard", url: "/student", icon: LayoutDashboard },
 ];
 
+function roleLabel(r: "staff" | "student") {
+  return r === "staff" ? "Lecturer" : "Student";
+}
+
 export function AppSidebar({ role }: AppSidebarProps) {
+  const user = useAuthUser();
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const location = useLocation();
   const items = role === "staff" ? staffItems : studentItems;
+  const effectiveRole = user?.role ?? role;
+  const primaryName =
+    user?.displayName?.trim() || user?.username?.trim() || "";
+  const initials =
+    primaryName.length > 0 ? primaryName.substring(0, 2).toUpperCase() : "U";
+  const roleLine =
+    user?.roleDisplay?.trim() || roleLabel(effectiveRole);
 
   return (
     <Sidebar collapsible="icon">
@@ -61,7 +64,7 @@ export function AppSidebar({ role }: AppSidebarProps) {
           </div>
 
           <SidebarGroupLabel className="text-sidebar-foreground/50">
-            {role === "staff" ? "Lecturer" : "Student"}
+            {roleLine}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -86,19 +89,30 @@ export function AppSidebar({ role }: AppSidebarProps) {
       </SidebarContent>
 
       <SidebarFooter className="p-3">
-        {!collapsed && (
-          <div className="flex items-center gap-2 rounded-lg bg-sidebar-accent/50 px-3 py-2">
-            <div className="h-7 w-7 rounded-full bg-sidebar-primary/20" />
-            <div className="min-w-0">
-              <p className="truncate text-xs font-medium text-sidebar-foreground">
-                {role === "staff" ? "Dr. Sarah Patel" : "Amara Osei"}
+        <div
+          className={
+            collapsed
+              ? "flex justify-center"
+              : "flex items-center gap-3 rounded-lg bg-sidebar-accent/50 p-3"
+          }
+        >
+          <div
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar-primary/15 text-[10px] font-bold text-sidebar-primary"
+            aria-hidden
+          >
+            {initials}
+          </div>
+          {!collapsed && (
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-sidebar-foreground">
+                {primaryName || "Account"}
               </p>
-              <p className="text-[10px] text-sidebar-foreground/50">
-                {role === "staff" ? "Lecturer" : "Student"}
+              <p className="text-[10px] font-medium uppercase tracking-wide text-sidebar-foreground/50">
+                {roleLine}
               </p>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </SidebarFooter>
     </Sidebar>
   );

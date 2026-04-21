@@ -7,16 +7,20 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { Send, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import type { Task, Comment } from "@/stores/mockData";
+import type { Task } from "@/types/academic";
+import { useAuthUser } from "@/hooks/useAuthUser";
 
 interface TaskCommentPanelProps {
   task: Task | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddComment: (taskId: string, content: string, author: string, avatar: string) => void;
+  onAddComment: (taskId: string, content: string) => void;
 }
 
-function getCountdown(deadline: Date) {
+function getCountdown(dateInput: any) {
+  if (!dateInput) return { text: "No Date", urgent: false };
+  const deadline = new Date(dateInput);
+  if (isNaN(deadline.getTime())) return { text: "Invalid", urgent: false };
   const diff = deadline.getTime() - Date.now();
   if (diff <= 0) return { text: "Overdue", urgent: true };
   const hours = Math.floor(diff / 3600_000);
@@ -27,6 +31,7 @@ function getCountdown(deadline: Date) {
 }
 
 export function TaskCommentPanel({ task, open, onOpenChange, onAddComment }: TaskCommentPanelProps) {
+  const user = useAuthUser();
   const [message, setMessage] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -38,11 +43,12 @@ export function TaskCommentPanel({ task, open, onOpenChange, onAddComment }: Tas
 
   if (!task) return null;
 
-  const countdown = getCountdown(task.deadline);
+  const rawDate = (task as any).due_date || (task as any).dueDate || (task as any).deadline;
+  const countdown = getCountdown(rawDate);
 
   const handleSend = () => {
     if (!message.trim()) return;
-    onAddComment(task.id, message.trim(), "You", "YU");
+    onAddComment(task.id, message.trim());
     setMessage("");
   };
 
@@ -57,7 +63,7 @@ export function TaskCommentPanel({ task, open, onOpenChange, onAddComment }: Tas
       <SheetContent className="flex w-full flex-col sm:max-w-md">
         <SheetHeader>
           <SheetTitle className="text-lg">{task.title}</SheetTitle>
-          <SheetDescription className="text-sm">{task.unit}</SheetDescription>
+          <SheetDescription className="text-sm">{(task as any).unit_code || task.unitId}</SheetDescription>
         </SheetHeader>
 
         {/* Task meta */}
@@ -81,33 +87,59 @@ export function TaskCommentPanel({ task, open, onOpenChange, onAddComment }: Tas
 
         {/* Thread */}
         <div ref={scrollRef} className="mt-4 flex-1 space-y-3 overflow-y-auto rounded-lg bg-muted/30 p-3">
-          {task.comments.length === 0 && (
+          {(!task.comments || task.comments.length === 0) && (
             <p className="py-8 text-center text-sm text-muted-foreground">
               No comments yet. Start the conversation ✨
             </p>
           )}
-          {task.comments.map((comment) => (
-            <div
-              key={comment.id}
-              className={cn(
-                "flex gap-3 transition-opacity",
-                comment.isOptimistic && "opacity-60"
-              )}
-            >
-              <Avatar className="h-8 w-8 shrink-0">
-                <AvatarFallback className="text-xs">{comment.avatar}</AvatarFallback>
-              </Avatar>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-sm font-semibold">{comment.author}</span>
-                  <span className="text-[11px] text-muted-foreground">
-                    {formatDistanceToNow(comment.createdAt, { addSuffix: true })}
-                  </span>
+          {task.comments?.map((comment: any) => {
+            // 1. Map the correct backend keys
+            const authorName = comment.author_name || comment.author || "Unknown";
+            const createdAt = comment.created_at || comment.createdAt;
+            
+            // 2. WhatsApp Logic: Is this message mine?
+            const isMe = user?.username === authorName;
+
+            return (
+              <div 
+                key={comment.id} 
+                className={cn("flex gap-3 transition-opacity w-full", isMe ? "justify-end" : "justify-start")}
+              >
+                {/* Avatar for 'Them' (Left) */}
+                {!isMe && (
+                  <Avatar className="h-8 w-8 shrink-0 shadow-sm">
+                    <AvatarFallback className="text-xs bg-muted text-foreground">
+                      {authorName.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
+
+                <div className={cn("flex flex-col max-w-[75%]", isMe ? "items-end" : "items-start")}>
+                  {/* Name & Time Tag */}
+                  <div className="flex items-baseline gap-2 px-1 mb-1">
+                    <span className="text-xs font-semibold text-muted-foreground">
+                      {isMe ? "You" : authorName.split('@')[0]}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground/60">
+                      {createdAt ? formatDistanceToNow(new Date(createdAt), { addSuffix: true }) : "just now"}
+                    </span>
+                  </div>
+
+                  {/* Chat Bubble */}
+                  <div 
+                    className={cn(
+                      "px-3 py-2 text-sm shadow-sm",
+                      isMe 
+                        ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-sm" 
+                        : "bg-muted/80 text-foreground border border-border/50 rounded-2xl rounded-tl-sm"
+                    )}
+                  >
+                    <p className="whitespace-pre-wrap break-words">{comment.content}</p>
+                  </div>
                 </div>
-                <p className="mt-0.5 text-sm font-medium text-foreground">{comment.content}</p>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Input */}
