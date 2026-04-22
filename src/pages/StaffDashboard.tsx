@@ -32,7 +32,7 @@ export default function StaffDashboard() {
 
   useEffect(() => {
     fetchTasks(defaultUnitId ?? "");
-    fetchSubmissions(); // 👈 NEW
+    fetchSubmissions(); //  NEW
     fetchNotifications();
   }, [fetchTasks, fetchSubmissions, fetchNotifications, defaultUnitId]);
 

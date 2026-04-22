@@ -26,7 +26,7 @@ export function useTasks() {
   const [submissions, setSubmissions] = useState<TaskSubmission[]>([]); // 👈 NEW
   const [isCreating, setIsCreating] = useState(false);
 
-  // 📡 Fetch Submissions for Staff
+  //  Fetch Submissions for Staff
   const fetchSubmissions = useCallback(async () => {
     try {
       const data = await taskService.getSubmissions();
@@ -42,7 +42,7 @@ export function useTasks() {
       const data = await taskService.getTasks(unitId);
       
       setTasks((prev) => {
-        // 🔄 The "WhatsApp" Merge Logic:
+        // The "WhatsApp" Merge Logic:
         return data.map((newTask: Task) => {
           // Find if we already have this task in our memory
           const existingTask = prev.find(t => String(t.id) === String(newTask.id));
@@ -61,7 +61,7 @@ export function useTasks() {
     }
   }, []);
 
-  // 📝 Create Task via API
+  //  Create Task via API
   const createTask = useCallback(async (task: Omit<Task, "id">) => {
     setIsCreating(true);
     try {
@@ -86,7 +86,7 @@ export function useTasks() {
     }
   }, []);
 
-  // 🚀 Move Submission (Update Status for Staff)
+  // Move Submission (Update Status for Staff)
   const moveSubmission = useCallback(async (submissionId: string | number, status: TaskStatus) => {
     try {
       const updatedSub = await taskService.updateSubmissionStatus(submissionId, status);
@@ -99,7 +99,7 @@ export function useTasks() {
   }, []);
 
 
-  // 💬 Add a real comment to a task
+  //  Add a real comment to a task
   // UPDATED: Removed author and avatar parameters. 
   // The backend now identifies the user from the JWT Token.
   const addComment = useCallback(async (taskId: string, content: string, parent?: string) => {
@@ -152,7 +152,7 @@ export function useNotifications() {
     }
   }, []);
 
-  // ✅ Mark a single notification as read in the DB and UI
+  // Mark a single notification as read in the DB and UI
   const markAsRead = useCallback(async (id: string) => {
     try {
       await socialService.markAsRead(id);
