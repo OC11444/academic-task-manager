@@ -17,7 +17,7 @@ const SetPassword = ({ email, onSignup }: SetPasswordProps) => {
 
   const handleCreateAccount = async () => {
     try {
-      // 🚀 2. Send the real package to Django
+      //  2. Send the real package to Django
       const response = await authService.loginSync({
         email: localEmail,
         password: password,
@@ -31,7 +31,7 @@ const SetPassword = ({ email, onSignup }: SetPasswordProps) => {
       onSignup(); 
       
     } catch (error: any) {
-      // 🚀 3. Show the real backend error (e.g., "Passwords do not match")
+      //  3. Show the real backend error (e.g., "Passwords do not match")
       console.error("Signup failed:", error.response?.data || error.message);
       
       // Alert pops up on the screen so you don't have to guess why it failed
