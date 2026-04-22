@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL, // Ensure this is http://localhost:8000/api
+  baseURL: "https://academic-api-bfhv.onrender.com/api",  // Ensure this is http://localhost:8000/api
   headers: {
     "Content-Type": "application/json",
   },

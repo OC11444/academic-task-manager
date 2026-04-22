@@ -22,7 +22,7 @@ const columns: { status: TaskStatus; label: string; color: string }[] = [
 ];
 
 /**
- * 🛡️ DEFENSIVE: Prevents the "White Screen" crash if date is missing
+ *  DEFENSIVE: Prevents the "White Screen" crash if date is missing
  */
 function getCountdownText(dateInput: any) {
   if (!dateInput) return { text: "No Date", urgent: false };

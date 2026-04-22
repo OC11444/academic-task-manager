@@ -13,7 +13,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { useTasks, useNotifications, useTeamPresence, useReports } from "@/stores/useAppStore";
 import { Upload, CheckCircle, Clock } from "lucide-react";
 import { motion } from "framer-motion";
-// 🛠️ FIX: Use the real Academic type so we can talk to the backend
+//  Use the real Academic type so we can talk to the backend
 import type { Task } from "@/types/academic"; 
 import { useAuthUser } from "@/hooks/useAuthUser";
 
@@ -23,14 +23,14 @@ export default function StudentDashboard() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [commentOpen, setCommentOpen] = useState(false);
 
-  // 🛠️ Grab the fetch functions and real data from the store
+  // Grab the fetch functions and real data from the store
   const { tasks, moveTask, addComment, fetchTasks } = useTasks();
   const selectedTask = tasks.find(t => String(t.id) === String(selectedTaskId)) || null;
   const { notifications, unreadCount, markAsRead, markAllRead, fetchNotifications } = useNotifications();
   const { members } = useTeamPresence();
   const { report, fetchUnitReport } = useReports();
 
-  // 🛠️ Sarah's connection logic: Determine which unit to show
+  //  Sarah's connection logic: Determine which unit to show
   const activeUnitId = import.meta.env.VITE_DEFAULT_UNIT_ID || "2";
 
   useEffect(() => {
@@ -56,7 +56,7 @@ export default function StudentDashboard() {
     setCommentOpen(true);
   };
 
-  // 🛠️ Dynamic Stats: Link the top cards to Sarah's actual report
+  // Dynamic Stats: Link the top cards to Sarah's actual report
   const studentStats = [
     { 
       label: "Submitted", 
